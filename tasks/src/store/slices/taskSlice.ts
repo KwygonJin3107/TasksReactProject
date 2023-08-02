@@ -21,12 +21,26 @@ const taskSlice = createSlice({
         status: action.payload.status,
         date: action.payload.date,
         description: action.payload.description,
-        isChecked: action.payload.isChecked
+        isChecked: action.payload.isChecked,
       });
     },
-    changeIsChecked(state, action: PayloadAction<{task: TaskItem; isChecked: boolean}>) {
-      const editedTask = state.tasks.find(t => t.id === action.payload.task.id);
-      if (editedTask !== undefined){
+    editTask(state, action: PayloadAction<TaskItem>) {
+      const editedTask = state.tasks.find((t) => t.id === action.payload.id);
+      if (editedTask !== undefined) {
+        editedTask.date = action.payload.date;
+        editedTask.description = action.payload.description;
+        editedTask.status = action.payload.status;
+        editedTask.title = action.payload.title;
+      }
+    },
+    changeIsChecked(
+      state,
+      action: PayloadAction<{ task: TaskItem; isChecked: boolean }>
+    ) {
+      const editedTask = state.tasks.find(
+        (t) => t.id === action.payload.task.id
+      );
+      if (editedTask !== undefined) {
         editedTask.isChecked = action.payload.isChecked;
       }
     },
@@ -37,12 +51,12 @@ const taskSlice = createSlice({
           task.isChecked = false;
         }
       }
-    }
+    },
   },
 });
 const { reducer } = taskSlice;
 
-export const { addTask, changeIsChecked, changeStatus } = taskSlice.actions;
+export const { addTask, editTask, changeIsChecked, changeStatus } = taskSlice.actions;
 export const tasksReducer = taskSlice.reducer;
 
 export default reducer;

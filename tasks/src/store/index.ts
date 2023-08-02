@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { tasksReducer, addTask, changeIsChecked, changeStatus } from "./slices/taskSlice";
+import { tasksReducer, addTask, editTask, changeIsChecked, changeStatus } from "./slices/taskSlice";
 
 const store = configureStore({
     reducer: {
@@ -7,7 +7,7 @@ const store = configureStore({
     },
 });
 
-export { store, tasksReducer, addTask, changeIsChecked, changeStatus };
+export { store, tasksReducer, addTask, editTask, changeIsChecked, changeStatus };
 
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch

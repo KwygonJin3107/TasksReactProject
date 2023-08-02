@@ -1,15 +1,14 @@
 import React from "react";
-import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { nanoid } from "@reduxjs/toolkit";
-import {createUseStyles} from 'react-jss'
+import { createUseStyles } from "react-jss";
 
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup/dist/yup";
 
 import { TaskStatusEnum } from "../../enums/TaskStatusEnum";
-import { addTask } from "../../store";
+import { addTask, editTask } from "../../store";
 
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
@@ -42,8 +41,8 @@ const useStyles = createUseStyles({
     flexWrap: "nowrap",
     justifyContent: "center",
     alignItems: "baseline",
-  }
-})
+  },
+});
 
 const requiredMessage = "Field is required";
 
@@ -67,7 +66,7 @@ export interface TaskItem {
   date: string;
   status: TaskStatusEnum;
   description?: string;
-  isChecked: boolean
+  isChecked: boolean;
 }
 
 interface TaskFormInputs {
@@ -84,21 +83,24 @@ export const statuses = [
   TaskStatusEnum.DELETED,
 ];
 
-export default function TaskItemModal() {
+type Props = {
+  initialValues?: TaskItem;
+  onClose: () => void;
+};
+
+export default function TaskItemModal(props: Props) {
   const dispatch = useDispatch();
   const classes = useStyles();
 
-  const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const { initialValues, onClose } = props;
   const { handleSubmit, formState, reset, control } = useForm<TaskFormInputs>({
     resolver: yupResolver(createValidationSchema),
     mode: "all",
     defaultValues: {
-      title: "",
-      status: TaskStatusEnum.TO_DO,
-      date: new Date(),
-      description: "",
+      title: initialValues?.title || "",
+      status: initialValues?.status || TaskStatusEnum.TO_DO,
+      date: initialValues ? new Date(initialValues.date) : new Date(),
+      description: initialValues?.description || "",
     },
   });
 
@@ -110,12 +112,18 @@ export default function TaskItemModal() {
       status: data.status,
       title: data.title,
       description: data.description,
-      id: nanoid(),
-      isChecked: false
+      id: initialValues ? initialValues.id : nanoid(),
+      isChecked: false,
     };
-    dispatch(addTask(newTask));
+    if (initialValues){
+      dispatch(editTask(newTask));
+    }
+    else {
+      dispatch(addTask(newTask));
+    }
+    
     reset();
-    setOpen(false);
+    onClose();
   };
 
   const menuItems = statuses.map((status) => (
@@ -126,12 +134,10 @@ export default function TaskItemModal() {
 
   return (
     <div>
-      <Button onClick={handleOpen}>Create</Button>
-
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <Modal
-          open={open}
-          onClose={handleClose}
+          open
+          onClose={onClose}
           aria-labelledby="modal-modal-title"
           aria-describedby="modal-modal-description"
         >
@@ -183,23 +189,15 @@ export default function TaskItemModal() {
                 <Grid item xs={12}>
                   <Controller
                     render={({ field }) => (
-                      //<Tooltip title={field.value}>
                       <TextField
                         {...field}
                         fullWidth
                         label="Description"
                         error={!!errors.description}
                         helperText={errors.description?.message}
-                        // sx={{
-                        //   "& .MuiInputBase-input": {
-                        //     overflow: "hidden",
-                        //     textOverflow: "ellipsis",
-                        //   },
-                        // }}
                         rows={4}
                         multiline
                       />
-                      //</Tooltip>
                     )}
                     name="description"
                     control={control}
@@ -211,7 +209,7 @@ export default function TaskItemModal() {
                     <Button
                       onClick={() => {
                         reset();
-                        handleClose();
+                        onClose();
                       }}
                       type="button"
                     >

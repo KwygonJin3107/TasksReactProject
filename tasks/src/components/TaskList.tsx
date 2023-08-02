@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import moment from "moment";
@@ -15,6 +15,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { RootState, changeIsChecked, changeStatus } from "../store";
 import { TaskStatusEnum } from "../enums/TaskStatusEnum";
+import TaskItemModal, { TaskItem } from "./modals/TaskItemModal";
 
 const statuses = [
   TaskStatusEnum.TO_DO,
@@ -29,14 +30,26 @@ type Props = {
 
 export interface TasksChangeStatus {
   id: string;
-  isChecked: boolean
+  isChecked: boolean;
 }
 
 export default function TaskList(props: Props) {
   const dispatch = useDispatch();
 
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const [checkedCounter, setCheckedCounter] = useState(0);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [currTaskItem, setCurrTaskItem] = useState<TaskItem>();
+
+  const handleEditModalOpen = useCallback((task: TaskItem) => {
+    setCurrTaskItem(task);
+    setIsModalVisible(true);
+  }, []);
+
+  const handleEditModalClose = useCallback(() => {
+    setIsModalVisible(false);
+  }, []);
 
   const tasks = useSelector((state: RootState) => {
     return state.tasks.tasks;
@@ -54,15 +67,26 @@ export default function TaskList(props: Props) {
     renderedTasks = <div>Nothing here yet.</div>;
   } else {
     renderedTasks = filteredTasks.map((task) => {
+      const handleCheckedChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+      ) => {
+        dispatch(changeIsChecked({ task, isChecked: event.target.checked }));
+        setCheckedCounter(
+          event.target.checked ? checkedCounter + 1 : checkedCounter - 1
+        );
+      };
+
       const parsedDate = new Date(Date.parse(task.date));
 
       const menuItems = statuses.map((status) => (
         <MenuItem
           key={status}
           value={status}
+          disabled={!checkedCounter}
           onClick={() => {
             dispatch(changeStatus(status));
             setAnchorEl(null);
+            setCheckedCounter(0);
           }}
         >
           {status.toString()}
@@ -71,6 +95,7 @@ export default function TaskList(props: Props) {
 
       return (
         <Paper
+          key={task.id}
           sx={{
             p: 2,
             margin: 1,
@@ -81,11 +106,9 @@ export default function TaskList(props: Props) {
               theme.palette.mode === "dark" ? "#1A2027" : "#fff",
           }}
         >
-          <Grid key={task.id} container spacing={2}>
+          <Grid container spacing={2}>
             <Grid item>
-              <Checkbox size="small" onChange={(event) => {
-                dispatch(changeIsChecked({task, isChecked: event.target.checked}));
-              }}/>
+              <Checkbox size="small" onChange={handleCheckedChange} />
             </Grid>
             <Grid item xs container direction="column" spacing={2}>
               <Grid item xs>
@@ -134,9 +157,8 @@ export default function TaskList(props: Props) {
                 <IconButton
                   size="small"
                   aria-label="edit"
-                  onClick={() => {
-                    console.log("edit: " + task.title);
-                  }}
+                  disabled={checkedCounter !== 1}
+                  onClick={() => {handleEditModalOpen(task)}}
                 >
                   <EditIcon fontSize="small" />
                 </IconButton>
@@ -145,8 +167,10 @@ export default function TaskList(props: Props) {
                 <IconButton
                   size="small"
                   aria-label="delete"
+                  disabled={!checkedCounter}
                   onClick={() => {
-                    console.log("delete: " + task.title);
+                    dispatch(changeStatus(TaskStatusEnum.DELETED));
+                    setCheckedCounter(0);
                   }}
                 >
                   <DeleteIcon fontSize="small" />
@@ -159,5 +183,10 @@ export default function TaskList(props: Props) {
     });
   }
 
-  return <div>{renderedTasks}</div>;
+  return (
+    <div>
+      {isModalVisible && <TaskItemModal onClose={handleEditModalClose} initialValues={currTaskItem}/>}
+      {renderedTasks}
+    </div>
+  );
 }
