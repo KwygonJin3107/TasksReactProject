@@ -16,6 +16,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import { RootState, changeIsChecked, changeStatus } from "../store";
 import { TaskStatusEnum } from "../enums/TaskStatusEnum";
 import TaskItemModal, { TaskItem } from "./modals/TaskItemModal";
+import QuestionDialog from "./modals/QuestionDialog";
 
 const statuses = [
   TaskStatusEnum.TO_DO,
@@ -34,6 +35,8 @@ export interface TasksChangeStatus {
 }
 
 export default function TaskList(props: Props) {
+  const [dialogIsOpen, setDialogIsOpen] = useState(false);
+  
   const dispatch = useDispatch();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -41,6 +44,7 @@ export default function TaskList(props: Props) {
   const [checkedCounter, setCheckedCounter] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currTaskItem, setCurrTaskItem] = useState<TaskItem>();
+  const [statusToSet, setStatusToSet] = useState<TaskStatusEnum>(TaskStatusEnum.DELETED);
 
   const handleEditModalOpen = useCallback((task: TaskItem) => {
     setCurrTaskItem(task);
@@ -49,6 +53,21 @@ export default function TaskList(props: Props) {
 
   const handleEditModalClose = useCallback(() => {
     setIsModalVisible(false);
+  }, []);
+
+  const handleChangeStatusToDelete = useCallback(() => {
+    setStatusToSet(TaskStatusEnum.DELETED);
+    setDialogIsOpen(true);
+  }, []);
+
+  const handleQuestionDialogOk = () => {
+    dispatch(changeStatus(statusToSet));
+    setCheckedCounter(0);
+    setDialogIsOpen(false);
+  };
+
+  const handleQuestionDialogClose = useCallback(() => {
+    setDialogIsOpen(false);
   }, []);
 
   const tasks = useSelector((state: RootState) => {
@@ -84,9 +103,9 @@ export default function TaskList(props: Props) {
           value={status}
           disabled={!checkedCounter}
           onClick={() => {
-            dispatch(changeStatus(status));
+            setStatusToSet(status);
+            setDialogIsOpen(true);
             setAnchorEl(null);
-            setCheckedCounter(0);
           }}
         >
           {status.toString()}
@@ -129,6 +148,7 @@ export default function TaskList(props: Props) {
               <Button
                 id="button-change-status"
                 aria-controls={open ? "basic-menu" : undefined}
+                disabled={!task.isChecked}
                 aria-haspopup="true"
                 aria-expanded={open ? "true" : undefined}
                 onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
@@ -157,7 +177,7 @@ export default function TaskList(props: Props) {
                 <IconButton
                   size="small"
                   aria-label="edit"
-                  disabled={checkedCounter !== 1}
+                  disabled={checkedCounter !== 1 || !task.isChecked}
                   onClick={() => {handleEditModalOpen(task)}}
                 >
                   <EditIcon fontSize="small" />
@@ -167,11 +187,8 @@ export default function TaskList(props: Props) {
                 <IconButton
                   size="small"
                   aria-label="delete"
-                  disabled={!checkedCounter}
-                  onClick={() => {
-                    dispatch(changeStatus(TaskStatusEnum.DELETED));
-                    setCheckedCounter(0);
-                  }}
+                  disabled={!task.isChecked}
+                  onClick={handleChangeStatusToDelete}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -186,6 +203,7 @@ export default function TaskList(props: Props) {
   return (
     <div>
       {isModalVisible && <TaskItemModal onClose={handleEditModalClose} initialValues={currTaskItem}/>}
+      {dialogIsOpen && <QuestionDialog onClose={handleQuestionDialogClose} onOk={handleQuestionDialogOk} question="Submit changes?"/>}
       {renderedTasks}
     </div>
   );

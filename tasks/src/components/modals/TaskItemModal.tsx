@@ -1,4 +1,3 @@
-import React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { nanoid } from "@reduxjs/toolkit";
@@ -51,7 +50,8 @@ export const createValidationSchema = Yup.object({
     .trim()
     .max(99, "Title should be 99 characters maximum")
     .required(requiredMessage),
-  date: Yup.date().required(),
+  date: Yup.date()
+    .required(),
   status: Yup.mixed<TaskStatusEnum>()
     .oneOf(Object.values(TaskStatusEnum))
     .required(requiredMessage),
@@ -104,6 +104,8 @@ export default function TaskItemModal(props: Props) {
     },
   });
 
+  const isTaskDeleted = initialValues?.status === TaskStatusEnum.DELETED;
+
   const { errors } = formState;
 
   const onSubmit = (data: TaskFormInputs) => {
@@ -115,13 +117,12 @@ export default function TaskItemModal(props: Props) {
       id: initialValues ? initialValues.id : nanoid(),
       isChecked: false,
     };
-    if (initialValues){
+    if (initialValues) {
       dispatch(editTask(newTask));
-    }
-    else {
+    } else {
       dispatch(addTask(newTask));
     }
-    
+
     reset();
     onClose();
   };
@@ -150,6 +151,7 @@ export default function TaskItemModal(props: Props) {
                       <TextField
                         {...field}
                         fullWidth
+                        disabled={isTaskDeleted}
                         label="Title"
                         error={!!errors.title}
                         helperText={errors.title?.message}
@@ -163,7 +165,12 @@ export default function TaskItemModal(props: Props) {
                 <Grid item xs={12}>
                   <Controller
                     render={({ field }) => (
-                      <DatePicker {...field} label="Date" />
+                      <DatePicker
+                        {...field}
+                        disabled={isTaskDeleted}
+                        label="Date"  
+                        disablePast              
+                      />
                     )}
                     name="date"
                     control={control}
@@ -175,6 +182,7 @@ export default function TaskItemModal(props: Props) {
                   <Controller
                     render={({ field }) => (
                       <Select
+                        disabled={!initialValues}
                         {...field}
                         labelId="status-select-label"
                         fullWidth
@@ -193,6 +201,7 @@ export default function TaskItemModal(props: Props) {
                         {...field}
                         fullWidth
                         label="Description"
+                        disabled={isTaskDeleted}
                         error={!!errors.description}
                         helperText={errors.description?.message}
                         rows={4}
