@@ -1,6 +1,10 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { TaskItem } from "../../components/modals/TaskItemModal";
-import { TaskStatusEnum } from "../../enums/TaskStatusEnum";
+import {
+  createSlice,
+  PayloadAction,
+} from '@reduxjs/toolkit';
+
+import { TaskItem } from '../../components/modals/TaskItemModal';
+import { TaskStatusEnum } from '../../enums/TaskStatusEnum';
 
 interface TaskState {
   tasks: TaskItem[];
@@ -21,7 +25,6 @@ const taskSlice = createSlice({
         status: action.payload.status,
         date: action.payload.date,
         description: action.payload.description,
-        isChecked: action.payload.isChecked,
       });
     },
     editTask(state, action: PayloadAction<TaskItem>) {
@@ -33,22 +36,13 @@ const taskSlice = createSlice({
         editedTask.title = action.payload.title;
       }
     },
-    changeIsChecked(
-      state,
-      action: PayloadAction<{ task: TaskItem; isChecked: boolean }>
-    ) {
-      const editedTask = state.tasks.find(
-        (t) => t.id === action.payload.task.id
-      );
-      if (editedTask !== undefined) {
-        editedTask.isChecked = action.payload.isChecked;
-      }
-    },
-    changeStatus(state, action: PayloadAction<TaskStatusEnum>) {
-      for (const task of state.tasks) {
-        if (task.isChecked) {
-          task.status = action.payload;
-          task.isChecked = false;
+    changeStatus(state, action: PayloadAction<{ ids: string[]; newStatus: TaskStatusEnum }>) {
+      for (const id of action.payload.ids){
+        const curInd = state.tasks.findIndex((task => {
+          return task.id === id
+        }));
+        if (curInd >= 0) {
+          state.tasks[curInd].status = action.payload.newStatus;
         }
       }
     },
@@ -56,7 +50,7 @@ const taskSlice = createSlice({
 });
 const { reducer } = taskSlice;
 
-export const { addTask, editTask, changeIsChecked, changeStatus } = taskSlice.actions;
+export const { addTask, editTask, changeStatus } = taskSlice.actions;
 export const tasksReducer = taskSlice.reducer;
 
 export default reducer;

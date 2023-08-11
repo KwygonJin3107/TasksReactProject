@@ -1,26 +1,30 @@
-import { useForm, Controller } from "react-hook-form";
-import { useDispatch } from "react-redux";
-import { nanoid } from "@reduxjs/toolkit";
-import { createUseStyles } from "react-jss";
+import {
+  Controller,
+  useForm,
+} from 'react-hook-form';
+import { createUseStyles } from 'react-jss';
+import { useDispatch } from 'react-redux';
+import { yupResolver } from '@hookform/resolvers/yup/dist/yup';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Grid from '@mui/material/Grid';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Modal from '@mui/material/Modal';
+import Select from '@mui/material/Select';
+import TextField from '@mui/material/TextField';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { nanoid } from '@reduxjs/toolkit';
 
-import * as Yup from "yup";
-import { yupResolver } from "@hookform/resolvers/yup/dist/yup";
-
-import { TaskStatusEnum } from "../../enums/TaskStatusEnum";
-import { addTask, editTask } from "../../store";
-
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
-import Modal from "@mui/material/Modal";
-import TextField from "@mui/material/TextField";
-import Grid from "@mui/material/Grid";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import InputLabel from "@mui/material/InputLabel";
-
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { statuses } from '../../constants/ProjectConstants';
+import { TaskStatusEnum } from '../../enums/TaskStatusEnum';
+import {
+  addTask,
+  editTask,
+} from '../../store';
+import { createValidationSchema } from '../../validations/TaskItemValidation';
 
 const useStyles = createUseStyles({
   boxStyle: {
@@ -43,30 +47,12 @@ const useStyles = createUseStyles({
   },
 });
 
-const requiredMessage = "Field is required";
-
-export const createValidationSchema = Yup.object({
-  title: Yup.string()
-    .trim()
-    .max(99, "Title should be 99 characters maximum")
-    .required(requiredMessage),
-  date: Yup.date()
-    .required(),
-  status: Yup.mixed<TaskStatusEnum>()
-    .oneOf(Object.values(TaskStatusEnum))
-    .required(requiredMessage),
-  description: Yup.string()
-    .trim()
-    .max(1024, "Description should be 1024 characters maximum"),
-});
-
 export interface TaskItem {
   id: string;
   title: string;
   date: string;
   status: TaskStatusEnum;
   description?: string;
-  isChecked: boolean;
 }
 
 interface TaskFormInputs {
@@ -76,14 +62,7 @@ interface TaskFormInputs {
   description: string | undefined;
 }
 
-export const statuses = [
-  TaskStatusEnum.TO_DO,
-  TaskStatusEnum.IN_PROGRESS,
-  TaskStatusEnum.DONE,
-  TaskStatusEnum.DELETED,
-];
-
-type Props = {
+interface Props {
   initialValues?: TaskItem;
   onClose: () => void;
 };
@@ -91,7 +70,6 @@ type Props = {
 export default function TaskItemModal(props: Props) {
   const dispatch = useDispatch();
   const classes = useStyles();
-
   const { initialValues, onClose } = props;
   const { handleSubmit, formState, reset, control } = useForm<TaskFormInputs>({
     resolver: yupResolver(createValidationSchema),
@@ -103,10 +81,13 @@ export default function TaskItemModal(props: Props) {
       description: initialValues?.description || "",
     },
   });
-
   const isTaskDeleted = initialValues?.status === TaskStatusEnum.DELETED;
-
   const { errors } = formState;
+  const menuItems = statuses.map((status) => (
+    <MenuItem key={status} value={status}>
+      {status.toString()}
+    </MenuItem>
+  ));
 
   const onSubmit = (data: TaskFormInputs) => {
     const newTask: TaskItem = {
@@ -114,9 +95,9 @@ export default function TaskItemModal(props: Props) {
       status: data.status,
       title: data.title,
       description: data.description,
-      id: initialValues ? initialValues.id : nanoid(),
-      isChecked: false,
+      id: initialValues ? initialValues.id : nanoid()
     };
+
     if (initialValues) {
       dispatch(editTask(newTask));
     } else {
@@ -127,11 +108,6 @@ export default function TaskItemModal(props: Props) {
     onClose();
   };
 
-  const menuItems = statuses.map((status) => (
-    <MenuItem key={status} value={status}>
-      {status.toString()}
-    </MenuItem>
-  ));
 
   return (
     <div>
@@ -144,7 +120,7 @@ export default function TaskItemModal(props: Props) {
         >
           <form onSubmit={handleSubmit(onSubmit)}>
             <Box className={classes.boxStyle}>
-              <Grid container direction="column" rowSpacing={1}>
+              <Grid container direction="column" rowSpacing={1}>              
                 <Grid item xs={12}>
                   <Controller
                     render={({ field }) => (
@@ -162,6 +138,7 @@ export default function TaskItemModal(props: Props) {
                     rules={{ required: true }}
                   />
                 </Grid>
+
                 <Grid item xs={12}>
                   <Controller
                     render={({ field }) => (
@@ -177,6 +154,7 @@ export default function TaskItemModal(props: Props) {
                     rules={{ required: true }}
                   />
                 </Grid>
+
                 <Grid item xs={12}>
                   <InputLabel id="status-select-label">Status</InputLabel>
                   <Controller
@@ -194,6 +172,7 @@ export default function TaskItemModal(props: Props) {
                     control={control}
                   />
                 </Grid>
+
                 <Grid item xs={12}>
                   <Controller
                     render={({ field }) => (
@@ -213,6 +192,7 @@ export default function TaskItemModal(props: Props) {
                     rules={{ required: true }}
                   />
                 </Grid>
+                
                 <Grid item xs={12}>
                   <div className={classes.buttonsStyle}>
                     <Button
