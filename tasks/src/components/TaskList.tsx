@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import moment from 'moment';
-import { createUseStyles } from 'react-jss';
 import {
   useDispatch,
   useSelector,
@@ -21,6 +20,7 @@ import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
@@ -32,12 +32,6 @@ import {
 } from '../store';
 import QuestionDialog from './modals/QuestionDialog';
 import TaskItemModal, { TaskItem } from './modals/TaskItemModal';
-
-const useStyles = createUseStyles({
-  menuStyle: {
-    color: "black"
-  },
-});
 
 type Props = {
   listType: TaskStatusEnum | undefined;
@@ -60,7 +54,6 @@ export default function TaskList(props: Props) {
   const [statusToSet, setStatusToSet] = useState<TaskStatusEnum>(
     TaskStatusEnum.DELETED
   );
-  const classes = useStyles();
 
   const getColorByStatus = (status: TaskStatusEnum) => {
     switch (status) {
@@ -68,26 +61,41 @@ export default function TaskList(props: Props) {
         return {
           color: "white",
           backgroundColor: grey[700],
+          "&:hover": {
+            color: "black"
+          }
         };
       case TaskStatusEnum.IN_PROGRESS:
         return {
           color: "white",
           backgroundColor: blue[700],
+          "&:hover": {
+            color: "black"
+          }
         };
       case TaskStatusEnum.DONE:
         return {
           color: "white",
           backgroundColor: green[700],
-        };
+          "&:hover": {
+            color: "black"
+          }
+      };
       case TaskStatusEnum.DELETED:
         return {
           color: "white",
           backgroundColor: red[700],
+          "&:hover": {
+            color: "black"
+          }
         };
       default:
         return {
           color: "white",
           backgroundColor: blue[700],
+          "&:hover": {
+            color: "black"
+          }
         };
     }
   };
@@ -191,9 +199,6 @@ export default function TaskList(props: Props) {
               value={status}
               sx={getColorByStatus(status)}
               divider
-              classes={
-                {selected:  classes.menuStyle}
-              }
               onClick={() => {
                 handleChangeStatus(task, status);
               }}
@@ -239,19 +244,19 @@ export default function TaskList(props: Props) {
 
                   <Grid item container>
                     <Tooltip title={task.description}>
-                        <Typography
-                          sx={{
-                            display: "-webkit-box",
-                            overflow: "hidden",
-                            WebkitBoxOrient: "vertical",
-                            WebkitLineClamp: 3,
-                          }}               
-                          variant="body2"
-                          gutterBottom
-                        >
-                          {task.description}
-                        </Typography>
-                      </Tooltip>
+                      <Typography
+                        sx={{
+                          display: "-webkit-box",
+                          overflow: "hidden",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: 3,
+                        }}
+                        variant="body2"
+                        gutterBottom
+                      >
+                        {task.description}
+                      </Typography>
+                    </Tooltip>
                   </Grid>
                 </Grid>
                 <Grid item xs={2}>
@@ -346,12 +351,28 @@ export default function TaskList(props: Props) {
           question="Submit changes?"
         />
       )}
-      <Grid container spacing={2}>
+      {listType === TaskStatusEnum.TO_DO && (
+        <Stack direction="row" justifyContent="end">
+          <Button
+            sx={{
+              height: 40,
+            }}
+            onClick={handleCreateModalOpen}
+          >
+            Create new
+          </Button>
+        </Stack>
+      )}
+      {listType !== TaskStatusEnum.TO_DO && (
+        <Box
+          sx={{
+            height: 40,
+          }}
+        />
+      )}
+      <Grid direction="column" container spacing={2}>
         <Grid item xs>
           {renderedTasks()}
-        </Grid>
-        <Grid item xs={1}>
-          <Button onClick={handleCreateModalOpen}>Create new</Button>
         </Grid>
       </Grid>
     </div>
